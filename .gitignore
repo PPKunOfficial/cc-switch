@@ -1,31 +1,52 @@
+```
+# Dependencies
 node_modules/
+vendor/
+
+# Build artifacts
+target/
 dist/
-release/
-.DS_Store
+build/
+*.so
+*.dylib
+*.dll
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+
+# Logs
 *.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment
 .env
 .env.local
-*.tsbuildinfo
-.npmrc
-CLAUDE.md
-# AGENTS.md
-GEMINI.md
-/.claude
-/.codex
-/.gemini
-/.cc-switch
-/.idea
-/.vscode
-vitest-report.json
-nul
+*.env.*
 
-# Flatpak build artifacts
-flatpak/cc-switch.deb
-flatpak-build/
-flatpak-repo/
-.worktrees/
-.spec-workflow/
-copilot-api
-.history
-CODEBUDDY.md
-.github
+# Coverage
+.coverage
+coverage/
+htmlcov/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Rust/Cargo (for Tauri)
+Cargo.lock
+**/target/
+!target/release/
+*.rs.bk
+```

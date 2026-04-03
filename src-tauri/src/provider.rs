@@ -295,6 +295,10 @@ pub struct ProviderMeta {
     /// 用于多账号支持，关联到特定的 GitHub 账号
     #[serde(rename = "githubAccountId", skip_serializing_if = "Option::is_none")]
     pub github_account_id: Option<String>,
+    /// 转发时是否将 User-Agent 替换为 Codex CLI
+    /// 用于某些中转站检测非 codex ua 会拒绝访问的场景
+    #[serde(rename = "useCodexUa", skip_serializing_if = "Option::is_none")]
+    pub use_codex_ua: Option<bool>,
 }
 
 impl ProviderMeta {

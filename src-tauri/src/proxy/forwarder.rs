@@ -19,6 +19,7 @@ use super::{
 };
 use crate::commands::CopilotAuthState;
 use crate::proxy::providers::copilot_auth::CopilotAuthManager;
+use crate::services::stream_check::StreamCheckService;
 use crate::{app_config::AppType, provider::Provider};
 use http::Extensions;
 use serde_json::Value;
@@ -898,6 +899,13 @@ impl RequestForwarder {
             &[]
         };
 
+        // 检查是否需要使用 Codex CLI User-Agent
+        let use_codex_ua = provider
+            .meta
+            .as_ref()
+            .and_then(|m| m.use_codex_ua)
+            .unwrap_or(false);
+
         // 预计算上游 host 值（用于在原位替换 host header）
         let upstream_host = url
             .parse::<http::Uri>()
@@ -920,6 +928,17 @@ impl RequestForwarder {
             } else {
                 CLAUDE_CODE_BETA.to_string()
             })
+        } else {
+            None
+        };
+
+        // 预计算 Codex CLI User-Agent（如果需要）
+        let codex_user_agent = if use_codex_ua {
+            let os_name = StreamCheckService::get_os_name();
+            let arch_name = StreamCheckService::get_arch_name();
+            Some(format!(
+                "codex_cli_rs/0.80.0 ({os_name} 15.7.2; {arch_name}) Terminal"
+            ))
         } else {
             None
         };
@@ -1038,6 +1057,16 @@ impl RequestForwarder {
                 continue;
             }
 
+            // --- user-agent — 如果启用了 Codex CLI UA，则替换 ---
+            if key_str.eq_ignore_ascii_case("user-agent") && codex_user_agent.is_some() {
+                if let Some(ref ua_val) = codex_user_agent {
+                    if let Ok(hv) = http::HeaderValue::from_str(ua_val) {
+                        ordered_headers.append("user-agent", hv);
+                    }
+                }
+                continue;
+            }
+
             // --- 默认：透传 ---
             ordered_headers.append(key.clone(), value.clone());
         }
@@ -1072,6 +1101,15 @@ impl RequestForwarder {
                 "anthropic-version",
                 http::HeaderValue::from_static("2023-06-01"),
             );
+        }
+
+        // 如果启用了 Codex CLI UA 且原始请求中没有 user-agent，追加
+        if use_codex_ua && !ordered_headers.contains_key("user-agent") {
+            if let Some(ref ua_val) = codex_user_agent {
+                if let Ok(hv) = http::HeaderValue::from_str(ua_val) {
+                    ordered_headers.append("user-agent", hv);
+                }
+            }
         }
 
         // 序列化请求体
